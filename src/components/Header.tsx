@@ -1,10 +1,25 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Plus, Menu, X } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Home, Plus, Menu, X, User, LogOut, Settings, List } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
@@ -24,7 +39,7 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-4">
             <Link 
               to="/" 
               className="text-muted-foreground hover:text-foreground transition-colors font-medium"
@@ -37,12 +52,58 @@ const Header = () => {
             >
               Guidelines
             </Link>
-            <Link to="/post-property">
-              <Button className="gap-2 bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4" />
-                Post Property
-              </Button>
-            </Link>
+            
+            {user ? (
+              <>
+                <Link to="/post-property">
+                  <Button className="gap-2 bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4" />
+                    Post Property
+                  </Button>
+                </Link>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <User className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover">
+                    <DropdownMenuItem asChild>
+                      <Link to="/my-listings" className="gap-2">
+                        <List className="w-4 h-4" />
+                        My Listings
+                      </Link>
+                    </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="gap-2">
+                          <Settings className="w-4 h-4" />
+                          Admin Panel
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="gap-2 text-destructive">
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="outline">Sign In</Button>
+                </Link>
+                <Link to="/post-property">
+                  <Button className="gap-2 bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4" />
+                    Post Property
+                  </Button>
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -72,15 +133,62 @@ const Header = () => {
               >
                 Guidelines
               </Link>
-              <Link 
-                to="/post-property"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Button className="w-full gap-2 bg-primary hover:bg-primary/90">
-                  <Plus className="w-4 h-4" />
-                  Post Property
-                </Button>
-              </Link>
+              
+              {user ? (
+                <>
+                  <Link 
+                    to="/my-listings"
+                    className="px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Listings
+                  </Link>
+                  {isAdmin && (
+                    <Link 
+                      to="/admin"
+                      className="px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Admin Panel
+                    </Link>
+                  )}
+                  <Link 
+                    to="/post-property"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button className="w-full gap-2 bg-primary hover:bg-primary/90">
+                      <Plus className="w-4 h-4" />
+                      Post Property
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                    className="w-full gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    to="/auth"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button variant="outline" className="w-full">Sign In</Button>
+                  </Link>
+                  <Link 
+                    to="/post-property"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button className="w-full gap-2 bg-primary hover:bg-primary/90">
+                      <Plus className="w-4 h-4" />
+                      Post Property
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         )}

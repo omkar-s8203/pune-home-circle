@@ -4,6 +4,18 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
   Phone, 
   MessageCircle, 
   MapPin, 
@@ -13,16 +25,36 @@ import {
   Calendar,
   Home,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from "lucide-react";
-import { MOCK_PROPERTIES, PROPERTY_TYPES } from "@/lib/constants";
+import { useProperty } from "@/hooks/useProperties";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { PROPERTY_TYPES } from "@/lib/constants";
 import { useState } from "react";
 
 const PropertyDetail = () => {
   const { id } = useParams();
+  const { data: property, isLoading } = useProperty(id || "");
+  const { toast } = useToast();
   const [currentImage, setCurrentImage] = useState(0);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reporterEmail, setReporterEmail] = useState("");
+  const [submittingReport, setSubmittingReport] = useState(false);
 
-  const property = MOCK_PROPERTIES.find((p) => p.id === id);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!property) {
     return (
@@ -50,42 +82,63 @@ const PropertyDetail = () => {
     );
   }
 
-  const propertyTypeLabel = PROPERTY_TYPES.find(t => t.value === property.propertyType)?.label;
+  const propertyTypeLabel = PROPERTY_TYPES.find(t => t.value === property.property_type)?.label;
+  const images = property.images?.map(img => img.image_url) || [];
+  const ownerPhone = property.profile?.phone || "";
+  const ownerName = property.profile?.full_name || "Property Owner";
 
   const handleCall = () => {
-    window.location.href = `tel:${property.ownerPhone}`;
-  };
-
-  const handleWhatsApp = () => {
-    const message = encodeURIComponent(`Hi, I'm interested in your ${propertyTypeLabel} property in ${property.area} listed on RentCircle Pune.`);
-    window.open(`https://wa.me/91${property.ownerPhone}?text=${message}`, "_blank");
-  };
-
-  const handleMap = () => {
-    if (property.mapLink) {
-      window.open(property.mapLink, "_blank");
+    if (ownerPhone) {
+      window.location.href = `tel:${ownerPhone}`;
     }
   };
 
-  const formatRent = (rent: number) => {
-    return new Intl.NumberFormat("en-IN").format(rent);
+  const handleWhatsApp = () => {
+    if (ownerPhone) {
+      const message = encodeURIComponent(`Hi, I'm interested in your ${propertyTypeLabel} property in ${property.area} listed on RentCircle Pune.`);
+      window.open(`https://wa.me/91${ownerPhone}?text=${message}`, "_blank");
+    }
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(date);
+  const handleMap = () => {
+    if (property.map_link) {
+      window.open(property.map_link, "_blank");
+    }
   };
 
-  const nextImage = () => {
-    setCurrentImage((prev) => (prev + 1) % property.images.length);
+  const handleReport = async () => {
+    if (!reportReason.trim()) return;
+    setSubmittingReport(true);
+    
+    try {
+      const { error } = await supabase.from("reports").insert({
+        property_id: property.id,
+        reporter_email: reporterEmail || null,
+        reason: reportReason,
+      });
+
+      if (error) throw error;
+      
+      toast({ title: "Report submitted", description: "Thank you for helping keep RentCircle safe." });
+      setReportDialogOpen(false);
+      setReportReason("");
+      setReporterEmail("");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setSubmittingReport(false);
+    }
   };
 
-  const prevImage = () => {
-    setCurrentImage((prev) => (prev - 1 + property.images.length) % property.images.length);
-  };
+  const formatRent = (rent: number) => new Intl.NumberFormat("en-IN").format(rent);
+  const formatDate = (date: string) => new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(date));
+
+  const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
+  const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -107,13 +160,19 @@ const PropertyDetail = () => {
             <div className="lg:col-span-2 space-y-6">
               {/* Image Gallery */}
               <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-muted">
-                <img
-                  src={property.images[currentImage]}
-                  alt={`${property.title} - Image ${currentImage + 1}`}
-                  className="w-full h-full object-cover"
-                />
+                {images.length > 0 ? (
+                  <img
+                    src={images[currentImage]}
+                    alt={`${property.title} - Image ${currentImage + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    No images available
+                  </div>
+                )}
                 
-                {property.images.length > 1 && (
+                {images.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
@@ -128,7 +187,7 @@ const PropertyDetail = () => {
                       <ChevronRight className="w-5 h-5" />
                     </button>
                     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
-                      {property.images.map((_, idx) => (
+                      {images.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setCurrentImage(idx)}
@@ -141,15 +200,17 @@ const PropertyDetail = () => {
                   </>
                 )}
 
-                <Badge className="absolute top-3 right-3 bg-card/90 backdrop-blur-sm text-foreground">
-                  {currentImage + 1} / {property.images.length}
-                </Badge>
+                {images.length > 0 && (
+                  <Badge className="absolute top-3 right-3 bg-card/90 backdrop-blur-sm text-foreground">
+                    {currentImage + 1} / {images.length}
+                  </Badge>
+                )}
               </div>
 
               {/* Thumbnail Gallery */}
-              {property.images.length > 1 && (
+              {images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-2">
-                  {property.images.map((img, idx) => (
+                  {images.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentImage(idx)}
@@ -168,9 +229,6 @@ const PropertyDetail = () => {
                 <div>
                   <div className="flex flex-wrap gap-2 mb-3">
                     <Badge variant="secondary">{propertyTypeLabel}</Badge>
-                    {property.featured && (
-                      <Badge className="bg-accent text-accent-foreground">Featured</Badge>
-                    )}
                   </div>
                   <h1 className="font-display font-bold text-2xl text-foreground mb-2">
                     {property.title}
@@ -189,18 +247,20 @@ const PropertyDetail = () => {
                   <span className="text-muted-foreground">/month</span>
                 </div>
 
-                <div>
-                  <h2 className="font-display font-semibold text-lg text-foreground mb-3">
-                    Description
-                  </h2>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {property.description}
-                  </p>
-                </div>
+                {property.description && (
+                  <div>
+                    <h2 className="font-display font-semibold text-lg text-foreground mb-3">
+                      Description
+                    </h2>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {property.description}
+                    </p>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="w-4 h-4" />
-                  Posted on {formatDate(property.createdAt)}
+                  Posted on {formatDate(property.created_at)}
                 </div>
               </div>
             </div>
@@ -214,26 +274,34 @@ const PropertyDetail = () => {
                 </h2>
                 
                 <div className="space-y-2">
-                  <p className="font-medium text-foreground">{property.ownerName}</p>
+                  <p className="font-medium text-foreground">{ownerName}</p>
                   <p className="text-sm text-muted-foreground">
                     Verified owner on RentCircle
                   </p>
                 </div>
 
                 <div className="space-y-3">
-                  <Button onClick={handleCall} className="w-full gap-2 bg-primary hover:bg-primary/90">
-                    <Phone className="w-4 h-4" />
-                    Call {property.ownerPhone}
-                  </Button>
-                  <Button
-                    onClick={handleWhatsApp}
-                    variant="outline"
-                    className="w-full gap-2 border-success text-success hover:bg-success hover:text-success-foreground"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    WhatsApp
-                  </Button>
-                  {property.mapLink && (
+                  {ownerPhone ? (
+                    <>
+                      <Button onClick={handleCall} className="w-full gap-2 bg-primary hover:bg-primary/90">
+                        <Phone className="w-4 h-4" />
+                        Call {ownerPhone}
+                      </Button>
+                      <Button
+                        onClick={handleWhatsApp}
+                        variant="outline"
+                        className="w-full gap-2 border-success text-success hover:bg-success hover:text-success-foreground"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        WhatsApp
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Contact information not available
+                    </p>
+                  )}
+                  {property.map_link && (
                     <Button onClick={handleMap} variant="outline" className="w-full gap-2">
                       <MapPin className="w-4 h-4" />
                       View on Google Maps
@@ -242,10 +310,55 @@ const PropertyDetail = () => {
                 </div>
 
                 <div className="pt-4 border-t border-border">
-                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
-                    <Flag className="w-4 h-4" />
-                    Report this listing
-                  </button>
+                  <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+                    <DialogTrigger asChild>
+                      <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors">
+                        <Flag className="w-4 h-4" />
+                        Report this listing
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Report Listing</DialogTitle>
+                        <DialogDescription>
+                          Help us keep RentCircle safe. Tell us why this listing is problematic.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="reporterEmail">Your Email (optional)</Label>
+                          <Input
+                            id="reporterEmail"
+                            type="email"
+                            placeholder="your@email.com"
+                            value={reporterEmail}
+                            onChange={(e) => setReporterEmail(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="reason">Reason for Report</Label>
+                          <Textarea
+                            id="reason"
+                            placeholder="Please describe the issue..."
+                            value={reportReason}
+                            onChange={(e) => setReportReason(e.target.value)}
+                            rows={4}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleReport} 
+                          disabled={!reportReason.trim() || submittingReport}
+                        >
+                          {submittingReport ? "Submitting..." : "Submit Report"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
 
