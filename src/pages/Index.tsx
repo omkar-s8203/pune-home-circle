@@ -5,7 +5,8 @@ import HeroSection from "@/components/HeroSection";
 import AreaChips from "@/components/AreaChips";
 import PropertyFilters from "@/components/PropertyFilters";
 import PropertyGrid from "@/components/PropertyGrid";
-import { MOCK_PROPERTIES, RENT_RANGES, type PuneArea, type PropertyType } from "@/lib/constants";
+import { useApprovedProperties } from "@/hooks/useProperties";
+import { RENT_RANGES, type PuneArea, type PropertyType } from "@/lib/constants";
 
 interface FilterValues {
   area: PuneArea | null;
@@ -14,6 +15,8 @@ interface FilterValues {
 }
 
 const Index = () => {
+  const { data: properties, isLoading } = useApprovedProperties();
+  
   const [filters, setFilters] = useState<FilterValues>({
     area: null,
     propertyType: null,
@@ -21,18 +24,37 @@ const Index = () => {
   });
 
   const filteredProperties = useMemo(() => {
-    return MOCK_PROPERTIES.filter((property) => {
-      if (property.status !== "approved") return false;
+    if (!properties) return [];
+    
+    return properties.filter((property) => {
       if (filters.area && property.area !== filters.area) return false;
-      if (filters.propertyType && property.propertyType !== filters.propertyType) return false;
+      if (filters.propertyType && property.property_type !== filters.propertyType) return false;
       if (property.rent < filters.rentRange[0] || property.rent > filters.rentRange[1]) return false;
       return true;
     });
-  }, [filters]);
+  }, [properties, filters]);
 
   const handleAreaChipSelect = (area: PuneArea | null) => {
     setFilters((prev) => ({ ...prev, area }));
   };
+
+  // Transform properties to match PropertyCard interface
+  const displayProperties = filteredProperties.map(p => ({
+    id: p.id,
+    title: p.title,
+    propertyType: p.property_type as PropertyType,
+    rent: p.rent,
+    area: p.area as PuneArea,
+    description: p.description || "",
+    images: p.images?.map(img => img.image_url) || [],
+    ownerName: p.profile?.full_name || "Property Owner",
+    ownerPhone: p.profile?.phone || "",
+    ownerEmail: p.profile?.email || "",
+    mapLink: p.map_link || undefined,
+    createdAt: new Date(p.created_at),
+    status: p.status,
+    featured: false,
+  }));
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -63,10 +85,10 @@ const Index = () => {
                 {filters.area ? `Rentals in ${filters.area}` : "All Rentals in Pune"}
               </h2>
               <span className="text-sm text-muted-foreground">
-                {filteredProperties.length} {filteredProperties.length === 1 ? "property" : "properties"} found
+                {displayProperties.length} {displayProperties.length === 1 ? "property" : "properties"} found
               </span>
             </div>
-            <PropertyGrid properties={filteredProperties} />
+            <PropertyGrid properties={displayProperties} loading={isLoading} />
           </section>
         </div>
       </main>
