@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, MessageCircle, MapPin, Home, IndianRupee } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Phone, MessageCircle, MapPin, IndianRupee, Share2, Copy, Check } from "lucide-react";
 import { type Property, PROPERTY_TYPES } from "@/lib/constants";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface PropertyCardProps {
   property: Property;
@@ -10,6 +13,10 @@ interface PropertyCardProps {
 
 const PropertyCard = ({ property }: PropertyCardProps) => {
   const propertyTypeLabel = PROPERTY_TYPES.find(t => t.value === property.propertyType)?.label;
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const propertyUrl = `${window.location.origin}/property/${property.id}`;
 
   const handleCall = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -27,6 +34,22 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
     if (property.mapLink) {
       window.open(property.mapLink, "_blank");
     }
+  };
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(propertyUrl);
+    setCopied(true);
+    toast({ title: "Link copied!", description: "Share it with anyone." });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const message = encodeURIComponent(`Check out this ${propertyTypeLabel} in ${property.area} for ₹${new Intl.NumberFormat("en-IN").format(property.rent)}/month on RentCircle Pune:\n${propertyUrl}`);
+    window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
   const formatRent = (rent: number) => {
@@ -107,6 +130,36 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
                 <MapPin className="w-4 h-4" />
               </Button>
             )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => e.preventDefault()}
+                  className="px-3"
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2" align="end">
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={handleCopyLink}
+                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                    {copied ? "Copied!" : "Copy Link"}
+                  </button>
+                  <button
+                    onClick={handleShareWhatsApp}
+                    className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Share on WhatsApp
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </article>
