@@ -6,18 +6,21 @@ export const useAdminStats = () => {
   return useQuery({
     queryKey: ["admin", "stats"],
     queryFn: async () => {
-      const [propertiesRes, reportsRes, blockedRes] = await Promise.all([
+      const [propertiesRes, reportsRes, flaggedRes, blockedRes] = await Promise.all([
         supabase.from("properties").select("status"),
-        supabase.from("reports").select("id"),
+        supabase.from("reports").select("id, status"),
+        supabase.from("reports").select("id").eq("reason", "Flagged for review").eq("status", "open"),
         supabase.from("blocked_contacts").select("id"),
       ]);
 
       const properties = propertiesRes.data || [];
+      const reports = reportsRes.data || [];
       const stats: AdminStats = {
         totalListings: properties.length,
         pendingApprovals: properties.filter(p => p.status === "pending").length,
         activeListings: properties.filter(p => p.status === "approved").length,
-        totalReports: reportsRes.data?.length || 0,
+        totalReports: reports.filter(r => r.status === "open").length,
+        flaggedForReview: flaggedRes.data?.length || 0,
         blockedContacts: blockedRes.data?.length || 0,
       };
 

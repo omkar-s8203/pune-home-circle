@@ -61,5 +61,6 @@ export interface AdminStats {
   pendingApprovals: number;
   activeListings: number;
   totalReports: number;
+  flaggedForReview: number;
   blockedContacts: number;
 }
