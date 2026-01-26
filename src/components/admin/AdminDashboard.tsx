@@ -5,6 +5,7 @@ import {
   Clock, 
   CheckCircle, 
   Flag, 
+  AlertTriangle,
   Ban,
   Loader2
 } from "lucide-react";
@@ -44,6 +45,12 @@ const AdminDashboard = () => {
       value: stats?.totalReports || 0, 
       icon: Flag,
       color: "text-destructive"
+    },
+    { 
+      title: "Flagged for Review", 
+      value: stats?.flaggedForReview || 0, 
+      icon: AlertTriangle,
+      color: "text-warning"
     },
     { 
       title: "Blocked Contacts", 
