@@ -7,7 +7,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Phone, MessageCircle, MapPin, IndianRupee, Share2, Copy, Check } from "lucide-react";
+import { Phone, MessageCircle, MapPin, IndianRupee, Share2, Copy, Check, Flag } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { type Property, PROPERTY_TYPES } from "@/lib/constants";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -20,8 +21,39 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
   const propertyTypeLabel = PROPERTY_TYPES.find(t => t.value === property.propertyType)?.label;
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [flagging, setFlagging] = useState(false);
 
   const propertyUrl = `${window.location.origin}/property/${property.id}`;
+
+  const handleFlagForReview = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (flagging) return;
+    setFlagging(true);
+
+    try {
+      const { error } = await supabase.from("reports").insert({
+        property_id: property.id,
+        reason: "Flagged for review",
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Property flagged",
+        description: "This listing has been sent to admin for review.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to flag",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setFlagging(false);
+    }
+  };
 
   const handleCall = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -155,6 +187,10 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
               <DropdownMenuItem onClick={handleShareWhatsApp} className="gap-2 cursor-pointer">
                 <MessageCircle className="w-4 h-4" />
                 Share on WhatsApp
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleFlagForReview} disabled={flagging} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
+                <Flag className="w-4 h-4" />
+                {flagging ? "Flagging..." : "Flag for Review"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
