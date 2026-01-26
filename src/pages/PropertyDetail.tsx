@@ -26,7 +26,10 @@ import {
   Home,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  Share2,
+  Copy,
+  Check
 } from "lucide-react";
 import { useProperty } from "@/hooks/useProperties";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +46,9 @@ const PropertyDetail = () => {
   const [reportReason, setReportReason] = useState("");
   const [reporterEmail, setReporterEmail] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const propertyUrl = typeof window !== "undefined" ? `${window.location.origin}/property/${id}` : "";
 
   if (isLoading) {
     return (
@@ -104,6 +110,18 @@ const PropertyDetail = () => {
     if (property.map_link) {
       window.open(property.map_link, "_blank");
     }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(propertyUrl);
+    setCopied(true);
+    toast({ title: "Link copied!", description: "Share it with anyone." });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareWhatsApp = () => {
+    const message = encodeURIComponent(`Check out this ${propertyTypeLabel} in ${property.area} for ₹${formatRent(property.rent)}/month on RentCircle Pune:\n${propertyUrl}`);
+    window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
   const handleReport = async () => {
@@ -307,6 +325,18 @@ const PropertyDetail = () => {
                       View on Google Maps
                     </Button>
                   )}
+                  
+                  {/* Share Buttons */}
+                  <div className="flex gap-2">
+                    <Button onClick={handleCopyLink} variant="outline" className="flex-1 gap-2">
+                      {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                      {copied ? "Copied!" : "Copy Link"}
+                    </Button>
+                    <Button onClick={handleShareWhatsApp} variant="outline" className="flex-1 gap-2">
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-border">
