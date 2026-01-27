@@ -8,8 +8,7 @@ import {
   Home, 
   LayoutDashboard, 
   Clock, 
-  CheckCircle, 
-  XCircle, 
+  List,
   Flag, 
   Ban,
   ArrowLeft,
@@ -69,7 +68,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex mb-6">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex mb-6">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -77,6 +76,10 @@ const Admin = () => {
             <TabsTrigger value="pending" className="gap-2">
               <Clock className="w-4 h-4" />
               <span className="hidden sm:inline">Pending</span>
+            </TabsTrigger>
+            <TabsTrigger value="all" className="gap-2">
+              <List className="w-4 h-4" />
+              <span className="hidden sm:inline">All Listings</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <Flag className="w-4 h-4" />
@@ -94,6 +97,10 @@ const Admin = () => {
 
           <TabsContent value="pending">
             <AdminListings status="pending" />
+          </TabsContent>
+
+          <TabsContent value="all">
+            <AdminListings />
           </TabsContent>
 
           <TabsContent value="reports">
