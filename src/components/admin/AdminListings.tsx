@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAllProperties, useUpdatePropertyStatus, useDeleteProperty } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { 
   Dialog,
   DialogContent,
@@ -11,6 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -20,7 +28,9 @@ import {
   MapPin, 
   IndianRupee,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Search,
+  X
 } from "lucide-react";
 import { PROPERTY_TYPES } from "@/lib/constants";
 
@@ -37,6 +47,42 @@ const AdminListings = ({ status }: AdminListingsProps) => {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+
+  // Filter properties based on search and filters
+  const filteredProperties = useMemo(() => {
+    if (!properties) return [];
+    
+    return properties.filter((property) => {
+      // Search filter
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        property.title.toLowerCase().includes(searchLower) ||
+        property.area.toLowerCase().includes(searchLower) ||
+        property.description?.toLowerCase().includes(searchLower) ||
+        property.profile?.email?.toLowerCase().includes(searchLower);
+      
+      // Status filter (only apply if not already filtered by prop)
+      const matchesStatus = status || statusFilter === "all" || property.status === statusFilter;
+      
+      // Type filter
+      const matchesType = typeFilter === "all" || property.property_type === typeFilter;
+      
+      return matchesSearch && matchesStatus && matchesType;
+    });
+  }, [properties, searchQuery, statusFilter, typeFilter, status]);
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+  };
+
+  const hasActiveFilters = searchQuery || statusFilter !== "all" || typeFilter !== "all";
 
   const handleApprove = async (propertyId: string) => {
     try {
@@ -100,14 +146,75 @@ const AdminListings = ({ status }: AdminListingsProps) => {
 
   return (
     <div className="space-y-4">
+      {/* Header with count */}
       <div className="flex items-center justify-between">
         <h2 className="font-display font-semibold text-lg text-foreground capitalize">
-          {status || "All"} Listings ({properties.length})
+          {status || "All"} Listings ({filteredProperties.length}{filteredProperties.length !== properties.length ? ` of ${properties.length}` : ""})
         </h2>
       </div>
 
-      <div className="space-y-4">
-        {properties.map((property) => (
+      {/* Search and Filters - Only show for "All Listings" tab */}
+      {!status && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title, area, or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {PROPERTY_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {hasActiveFilters && (
+            <Button variant="ghost" size="icon" onClick={clearFilters} className="shrink-0">
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Listings */}
+      {filteredProperties.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">
+            {hasActiveFilters ? "No listings match your filters." : `No ${status || ""} listings found.`}
+          </p>
+          {hasActiveFilters && (
+            <Button variant="link" onClick={clearFilters} className="mt-2">
+              Clear filters
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredProperties.map((property) => (
           <Card key={property.id}>
             <CardContent className="p-4">
               <div className="flex flex-col md:flex-row gap-4">
@@ -212,6 +319,7 @@ const AdminListings = ({ status }: AdminListingsProps) => {
           </Card>
         ))}
       </div>
+      )}
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
