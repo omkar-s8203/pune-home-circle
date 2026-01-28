@@ -14,8 +14,7 @@ import MyListings from "./pages/MyListings";
 import Services from "./pages/Services";
 import SponsorCoffee from "./pages/SponsorCoffee";
 import NotFound from "./pages/NotFound";
-// import { Analytics } from "@vercel/analytics/next"
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +39,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <Analytics />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
