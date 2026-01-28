@@ -47,6 +47,18 @@ const Header = () => {
               Browse Rentals
             </Link>
             <Link 
+              to="/services" 
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
+              Services
+            </Link>
+            <Link 
+              to="/sponsor" 
+              className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
+              Support Us
+            </Link>
+            <Link 
               to="/guidelines" 
               className="text-muted-foreground hover:text-foreground transition-colors font-medium"
             >
@@ -125,6 +137,20 @@ const Header = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Browse Rentals
+              </Link>
+              <Link 
+                to="/services" 
+                className="px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Services
+              </Link>
+              <Link 
+                to="/sponsor" 
+                className="px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Support Us
               </Link>
               <Link 
                 to="/guidelines" 

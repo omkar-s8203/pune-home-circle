@@ -64,3 +64,46 @@ export interface AdminStats {
   flaggedForReview: number;
   blockedContacts: number;
 }
+
+// Services
+export interface Service {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceRequest {
+  id: string;
+  service_id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  phone: string;
+  address: string | null;
+  message: string | null;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  service?: Service;
+}
+
+export interface SponsorSettings {
+  id: string;
+  qr_code_url: string | null;
+  bank_name: string | null;
+  account_holder_name: string | null;
+  account_number: string | null;
+  ifsc_code: string | null;
+  upi_id: string | null;
+  message: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
