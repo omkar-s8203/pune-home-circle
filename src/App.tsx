@@ -14,7 +14,8 @@ import MyListings from "./pages/MyListings";
 import Services from "./pages/Services";
 import SponsorCoffee from "./pages/SponsorCoffee";
 import NotFound from "./pages/NotFound";
-import { Analytics } from "@vercel/analytics/next"
+// import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/react"
 
 const queryClient = new QueryClient();
 
