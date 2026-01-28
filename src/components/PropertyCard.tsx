@@ -24,6 +24,7 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
   const [flagging, setFlagging] = useState(false);
 
   const propertyUrl = `${window.location.origin}/property/${property.id}`;
+  const ownerPhone = (property as any).phone || property.profile?.phone || property.ownerPhone;
 
   const handleFlagForReview = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,14 +59,22 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
   const handleCall = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = `tel:${property.ownerPhone}`;
+    if (ownerPhone) {
+      window.location.href = `tel:${ownerPhone}`;
+    } else {
+      toast({ title: "Phone number not available", variant: "destructive" });
+    }
   };
 
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const message = encodeURIComponent(`Hi, I'm interested in your ${propertyTypeLabel} property in ${property.area} listed on RentCircle Pune.`);
-    window.open(`https://wa.me/91${property.ownerPhone}?text=${message}`, "_blank");
+    if (ownerPhone) {
+      const message = encodeURIComponent(`Hi, I'm interested in your ${propertyTypeLabel || "property"} property in ${property.area} listed on RentCircle Pune.`);
+      window.open(`https://wa.me/91${ownerPhone}?text=${message}`, "_blank");
+    } else {
+      toast({ title: "Phone number not available", variant: "destructive" });
+    }
   };
 
   const handleMap = (e: React.MouseEvent) => {
