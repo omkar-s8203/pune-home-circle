@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useAdminStats, useAllProperties, useReports, useBlockedContacts } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -12,12 +11,18 @@ import {
   Flag, 
   Ban,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Wrench,
+  MessageSquare,
+  Coffee
 } from "lucide-react";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import AdminListings from "@/components/admin/AdminListings";
 import AdminReports from "@/components/admin/AdminReports";
 import AdminBlocked from "@/components/admin/AdminBlocked";
+import AdminServices from "@/components/admin/AdminServices";
+import AdminServiceRequests from "@/components/admin/AdminServiceRequests";
+import AdminSponsorSettings from "@/components/admin/AdminSponsorSettings";
 
 const Admin = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -68,7 +73,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex mb-6">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 lg:w-auto lg:inline-flex mb-6">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -79,7 +84,7 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="all" className="gap-2">
               <List className="w-4 h-4" />
-              <span className="hidden sm:inline">All Listings</span>
+              <span className="hidden sm:inline">Listings</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <Flag className="w-4 h-4" />
@@ -88,6 +93,18 @@ const Admin = () => {
             <TabsTrigger value="blocked" className="gap-2">
               <Ban className="w-4 h-4" />
               <span className="hidden sm:inline">Blocked</span>
+            </TabsTrigger>
+            <TabsTrigger value="services" className="gap-2">
+              <Wrench className="w-4 h-4" />
+              <span className="hidden sm:inline">Services</span>
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Requests</span>
+            </TabsTrigger>
+            <TabsTrigger value="sponsor" className="gap-2">
+              <Coffee className="w-4 h-4" />
+              <span className="hidden sm:inline">Sponsor</span>
             </TabsTrigger>
           </TabsList>
 
@@ -109,6 +126,18 @@ const Admin = () => {
 
           <TabsContent value="blocked">
             <AdminBlocked />
+          </TabsContent>
+
+          <TabsContent value="services">
+            <AdminServices />
+          </TabsContent>
+
+          <TabsContent value="requests">
+            <AdminServiceRequests />
+          </TabsContent>
+
+          <TabsContent value="sponsor">
+            <AdminSponsorSettings />
           </TabsContent>
         </Tabs>
       </main>
